@@ -7,6 +7,7 @@ import runtime.AirCondition;
 import runtime.AirConditionImpl;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -37,7 +38,8 @@ public class Relation {
         //类之间的映射关系
         classMaps.put(Gree.class.getName(), AirConditionImpl.class.getName());
         classMaps.put(Panasonic.class.getName(), AirConditionImpl.class.getName());
-
+        System.out.println(Gree.class.getName());
+        System.out.println(AirConditionImpl.class.getName());
 
         //方法之间的映射关系
         apiMaps.put(AirCondition.class.getName() + "." + AirCondition.class.getMethod("cool").getName(),
@@ -45,6 +47,11 @@ public class Relation {
                         Gree.class.getName() + "." + Gree.class.getMethod("cool").getName(),
                         Panasonic.class.getName() + "." + Panasonic.class.getMethod("down").getName()
                 }));
+        
+        
+        for(List<String> s:apiMaps.values()) {
+        	System.out.println(s);
+        }
 
     }
 
@@ -68,18 +75,32 @@ public class Relation {
     private static Object generate(String device) throws Exception {
         //生成底层设备对象
         Object deviceObj = Class.forName(device).newInstance();
-
         //通过类映射关系 获取到底层设备 对应的 运行时类
         for (String deviceType : classMaps.keySet()) {
             if (deviceType.equals(device)) {
                 String runtimeType = classMaps.get(deviceType);
-                Class runtimeClass = Class.forName(runtimeType);
+                Class<?> runtimeClass = Class.forName(runtimeType);
                 //生成运行时对象
                 Object runtimeObj = runtimeClass.newInstance();
                 //将运行时对象的类型设置成底层设备的类型
                 Field type = runtimeClass.getDeclaredField("type");
+                
+                Method method=runtimeClass.getDeclaredMethod("cool");
+                
+                System.out.println(runtimeType);
+                System.out.println(runtimeClass);
+                System.out.println(runtimeObj);
+                System.out.println(type);
+                System.out.println(method);
+                System.out.println(type.getName());
+                System.out.println(type.getModifiers());
+                System.out.println("--------");
+                
+                
+                
                 type.setAccessible(true);
                 type.set(runtimeObj, deviceType);
+                
                 //生成运行时对象的代理对象
                 Object proxyObj = ProxyUtils.getProxy(runtimeObj);
                 //将运行时对象代理与底层设备对象放入objMaps

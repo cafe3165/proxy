@@ -32,7 +32,6 @@ public class RuntimeHandler implements InvocationHandler {
         type.setAccessible(true);
         String deviceTypeName = (String) type.get(obj);
 
-
         //运行时对象方法调用 映射到 底层设备的api
         for (String k : Relation.apiMaps.keySet()) {
             if (k.equals(method.getDeclaringClass().getName() + "." + method.getName())) {

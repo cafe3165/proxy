@@ -8,5 +8,13 @@ public class LightImpl implements Light{
 	public void illumine() {
 		
 	}
+
+	@Override
+	public void darken() {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	
 	
 }

@@ -42,7 +42,17 @@ public class Relation {
 	public static void config() throws Exception {
 
 		// 类之间的映射关系
-		classMaps.put(Gree.class.getName(), AirConditionImpl.class.getName());
+		String packageUnderDevice="device";
+		String configUnderDevice="Gree";
+		String UDString =packageUnderDevice+"."+configUnderDevice;
+		
+		String packageRuntimeDevice="runtime";
+		String configRutimeDevice="AirConditionImpl";
+		String RTString =packageRuntimeDevice+"."+configRutimeDevice;
+		
+		Class<?> underDevice = Class.forName(UDString);
+		Class<?> runtimeDevice=Class.forName(RTString);
+		classMaps.put(underDevice.getName(), runtimeDevice.getName());
 		classMaps.put(Panasonic.class.getName(), AirConditionImpl.class.getName());
 		classMaps.put(Midea.class.getName(), LightImpl.class.getName());
 		classMaps.put(Opple.class.getName(), LightImpl.class.getName());
@@ -56,6 +66,10 @@ public class Relation {
 				Arrays.asList(new String[] {
 						Midea.class.getName() + "." + Midea.class.getMethod("IncreaseLedBrightness").getName(),
 						Opple.class.getName() + "." + Opple.class.getMethod("RaiseBrightness").getName() }));
+		apiMaps.put(Light.class.getName() + "." + Light.class.getMethod("darken").getName(),
+				Arrays.asList(new String[] {
+						Midea.class.getName() + "." + Midea.class.getMethod("ReduceLedBrightness").getName(),
+						Opple.class.getName() + "." + Opple.class.getMethod("LowerBrightness").getName() }));
 
 		for (List<String> s : apiMaps.values()) {
 			System.out.println(s);
@@ -75,11 +89,14 @@ public class Relation {
 		Light opple = (Light) generate(Opple.class.getName());
 
 		// 运行时对象调用
+
 		gree.cool();
 		panasonic.cool();
 //		
 		midea.illumine();
 		opple.illumine();
+		midea.darken();
+		opple.darken();
 	}
 
 	/**
@@ -92,6 +109,7 @@ public class Relation {
 		Object deviceObj = Class.forName(device).newInstance();
 		// 通过类映射关系 获取到底层设备 对应的 运行时类
 		for (String deviceType : classMaps.keySet()) {
+
 			if (deviceType.equals(device)) {
 				String runtimeType = classMaps.get(deviceType);
 				Class<?> runtimeClass = Class.forName(runtimeType);
@@ -99,10 +117,10 @@ public class Relation {
 				Object runtimeObj = runtimeClass.newInstance();
 				// 将运行时对象的类型设置成底层设备的类型
 				Field type = runtimeClass.getDeclaredField("type");
-
+				// 获得各个设备的方法
 				Method[] methods = runtimeClass.getDeclaredMethods();
 				String functionType = "";
-				//寻找当前设备的方法，使用正则匹配
+				// 寻找当前设备的方法，使用正则匹配
 				for (Method m : methods) {
 					String temp = m.toString().replaceAll("public void runtime.", "").replaceAll("()", "");
 					String pattern = "(\\D*)(\\.)(\\D*)(\\()";

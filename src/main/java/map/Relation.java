@@ -3,8 +3,11 @@ package map;
 import Proxy.ProxyUtils;
 import device.Gree;
 import device.Panasonic;
+import device.Philips;
 import device.Midea;
 import device.Opple;
+import runtime.AirCleaner;
+import runtime.AirCleanerImpl;
 import runtime.AirCondition;
 import runtime.AirConditionImpl;
 import runtime.Light;
@@ -42,6 +45,7 @@ public class Relation {
 	public static void config() throws Exception {
 
 		// 类之间的映射关系
+		//模拟配置
 		String packageUnderDevice="device";
 		String configUnderDevice="Gree";
 		String UDString =packageUnderDevice+"."+configUnderDevice;
@@ -50,27 +54,52 @@ public class Relation {
 		String configRutimeDevice="AirConditionImpl";
 		String RTString =packageRuntimeDevice+"."+configRutimeDevice;
 		
+		//空调
 		Class<?> underDevice = Class.forName(UDString);
 		Class<?> runtimeDevice=Class.forName(RTString);
 		classMaps.put(underDevice.getName(), runtimeDevice.getName());
 		classMaps.put(Panasonic.class.getName(), AirConditionImpl.class.getName());
+		//电灯
 		classMaps.put(Midea.class.getName(), LightImpl.class.getName());
 		classMaps.put(Opple.class.getName(), LightImpl.class.getName());
-
+		//空气净化器
+		classMaps.put(Philips.class.getName(), AirCleanerImpl.class.getName());
+		
+		
 		// 方法之间的映射关系
+		//1.空调的降温方法
 		apiMaps.put(AirCondition.class.getName() + "." + AirCondition.class.getMethod("cool").getName(),
 				Arrays.asList(new String[] { Gree.class.getName() + "." + Gree.class.getMethod("cool").getName(),
 						Panasonic.class.getName() + "." + Panasonic.class.getMethod("down").getName() }));
-
+		//2.电灯的提高亮度方法
 		apiMaps.put(Light.class.getName() + "." + Light.class.getMethod("illumine").getName(),
 				Arrays.asList(new String[] {
 						Midea.class.getName() + "." + Midea.class.getMethod("IncreaseLedBrightness").getName(),
 						Opple.class.getName() + "." + Opple.class.getMethod("RaiseBrightness").getName() }));
+		//3.电灯的降低亮度方法
 		apiMaps.put(Light.class.getName() + "." + Light.class.getMethod("darken").getName(),
 				Arrays.asList(new String[] {
 						Midea.class.getName() + "." + Midea.class.getMethod("ReduceLedBrightness").getName(),
 						Opple.class.getName() + "." + Opple.class.getMethod("LowerBrightness").getName() }));
 
+		//4.空气净化器的净化方法
+		
+		apiMaps.put(AirCleaner.class.getName() + "." + AirCleaner.class.getMethod("purify").getName(),
+				Arrays.asList(new String[] { 
+				Philips.class.getName() + "." + Philips.class.getMethod("ReducePM2_5").getName()}));
+		
+		//5.空气净化器的获得当前PM2.5方法
+		apiMaps.put(AirCleaner.class.getName() + "." + AirCleaner.class.getMethod("getPM2_5").getName(),
+				Arrays.asList(new String[] { 
+				Philips.class.getName() + "." + Philips.class.getMethod("getPM2_5").getName()}));
+		//5.空气净化器的获得设置PM2.5方法
+		apiMaps.put(AirCleaner.class.getName() + "." + AirCleaner.class.getMethod("setPM2_5",float.class).getName(),
+				Arrays.asList(new String[] { 
+				Philips.class.getName() + "." + Philips.class.getMethod("setPM2_5",float.class).getName()}));
+		
+		
+		
+		
 		for (List<String> s : apiMaps.values()) {
 			System.out.println(s);
 		}
@@ -82,21 +111,26 @@ public class Relation {
 	 */
 	public static void generateDeviceAndRuntime() throws Exception {
 		// 底层设备生成 返回一个运行时对象
-		AirCondition gree = (AirCondition) generate(Gree.class.getName());
-		AirCondition panasonic = (AirCondition) generate(Panasonic.class.getName());
+//		AirCondition gree = (AirCondition) generate(Gree.class.getName());
+//		AirCondition panasonic = (AirCondition) generate(Panasonic.class.getName());
 
-		Light midea = (Light) generate(Midea.class.getName());
-		Light opple = (Light) generate(Opple.class.getName());
+//		Light midea = (Light) generate(Midea.class.getName());
+//		Light opple = (Light) generate(Opple.class.getName());
+		
+		AirCleaner philips=(AirCleaner) generate(Philips.class.getName());
 
 		// 运行时对象调用
 
-		gree.cool();
-		panasonic.cool();
+//		gree.cool();
+//		panasonic.cool();
 //		
-		midea.illumine();
-		opple.illumine();
-		midea.darken();
-		opple.darken();
+//		midea.illumine();
+//		opple.illumine();
+//		midea.darken();
+//		opple.darken();
+		philips.setPM2_5(2);
+//		System.out.println(philips.getPM2_5());
+		
 	}
 
 	/**
@@ -113,28 +147,38 @@ public class Relation {
 			if (deviceType.equals(device)) {
 				String runtimeType = classMaps.get(deviceType);
 				Class<?> runtimeClass = Class.forName(runtimeType);
+				
 				// 生成运行时对象
 				Object runtimeObj = runtimeClass.newInstance();
+				
 				// 将运行时对象的类型设置成底层设备的类型
 				Field type = runtimeClass.getDeclaredField("type");
+				
 				// 获得各个设备的方法
 				Method[] methods = runtimeClass.getDeclaredMethods();
+				
 				String functionType = "";
-				// 寻找当前设备的方法，使用正则匹配
+				
+			
+				
+				
 				for (Method m : methods) {
-					String temp = m.toString().replaceAll("public void runtime.", "").replaceAll("()", "");
-					String pattern = "(\\D*)(\\.)(\\D*)(\\()";
-					Pattern r = Pattern.compile(pattern);
-					Matcher matcher = r.matcher(temp);
-					if (matcher.find())
-						functionType = matcher.group(3);
+					String temp = m.toString();
+					String[] ff=temp.split("\\.");
+					String[] ff2=ff[2].split("\\(");
+					System.out.println(ff2[0]);
+					functionType=ff2[0];
+
+					
+//				Method method = runtimeClass.getDeclaredMethod(functionType);
+
 
 				}
 
 //				System.out.println(functionType);
 
-				Method method = runtimeClass.getDeclaredMethod(functionType);
-
+				
+				
 				type.setAccessible(true);
 				type.set(runtimeObj, deviceType);
 

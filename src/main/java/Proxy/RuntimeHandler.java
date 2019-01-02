@@ -31,19 +31,31 @@ public class RuntimeHandler implements InvocationHandler {
         Field type = obj.getClass().getDeclaredField("type");
         type.setAccessible(true);
         String deviceTypeName = (String) type.get(obj);
+        System.out.println("deviceTypeName="+deviceTypeName);
 
         //运行时对象方法调用 映射到 底层设备的api
         for (String k : Relation.apiMaps.keySet()) {
+//        	System.out.println("k="+k);
             if (k.equals(method.getDeclaringClass().getName() + "." + method.getName())) {
+            	System.out.println("method.getDeclaringClass().getName()="+method.getDeclaringClass().getName());
+            	System.out.println("method.getName()="+method.getName());
+            	System.out.println("k="+k);
+            	
                 List<String> candidateMethods = Relation.apiMaps.get(k);
+                
+                System.out.println(candidateMethods);
                 for (int i = 0; i < candidateMethods.size(); i++) {
                     if (candidateMethods.get(i).contains(deviceTypeName)) {
-                        Class deviceType = Class.forName(candidateMethods.get(i).substring(0, candidateMethods.get(i).lastIndexOf(".")));
+                    	
+                        Class<?> deviceType = Class.forName(candidateMethods.get(i).substring(0, candidateMethods.get(i).lastIndexOf(".")));
                         Method deviceMethod = deviceType.getDeclaredMethod(candidateMethods.get(i).substring(candidateMethods.get(i).lastIndexOf(".") + 1));
+                        System.out.println("deviceType="+deviceType);
+                        System.out.println("deviceMethod="+deviceMethod);
+                        
                         //通过运行时对象代理得到底层设备对象
                         Object deviceObject = Relation.objMaps.get(proxy);
                         //调用底层设备对象
-                        return deviceMethod.invoke(deviceObject);
+                        return deviceMethod.invoke(deviceObject,args);
                     }
                 }
             }
